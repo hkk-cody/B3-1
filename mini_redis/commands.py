@@ -3,12 +3,14 @@
 import shlex
 from typing import Optional, Tuple
 
-from mini_redis.store import MiniRedis, OutOfMemoryError
+from mini_redis.store import ExpiryOutOfRangeError, MiniRedis, OutOfMemoryError
 
 
 INTEGER_ERROR = "(error) ERR value is not an integer or out of range"
 SYNTAX_ERROR = "(error) ERR syntax error"
 OOM_ERROR = "(error) OOM command not allowed when used_memory > 'maxmemory'"
+MIN_INTEGER = -(1 << 63)
+MAX_INTEGER = (1 << 63) - 1
 
 
 def quote_string(value: str) -> str:
@@ -150,7 +152,11 @@ class CommandProcessor:
         seconds = self._parse_integer(tokens[2])
         if seconds is None:
             return INTEGER_ERROR, False
-        return self._integer(self._store.expire(tokens[1], seconds)), False
+        try:
+            result = self._store.expire(tokens[1], seconds)
+        except ExpiryOutOfRangeError:
+            return INTEGER_ERROR, False
+        return self._integer(result), False
 
     def _ttl(self, tokens, command: str) -> Tuple[str, bool]:
         if len(tokens) != 2:
@@ -160,9 +166,12 @@ class CommandProcessor:
     @staticmethod
     def _parse_integer(value: str) -> Optional[int]:
         try:
-            return int(value)
+            parsed = int(value)
         except ValueError:
             return None
+        if parsed < MIN_INTEGER or parsed > MAX_INTEGER:
+            return None
+        return parsed
 
     @staticmethod
     def _integer(value: int) -> str:
