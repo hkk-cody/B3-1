@@ -1,6 +1,6 @@
 import unittest
 
-from mini_redis.store import MiniRedis, OutOfMemoryError
+from mini_redis.store import ExpiryOutOfRangeError, MiniRedis, OutOfMemoryError
 
 
 class FakeClock:
@@ -174,6 +174,36 @@ class MiniRedisStoreTests(unittest.TestCase):
         self.assertEqual(7, self.store.ttl("key"))
         self.clock.advance(7)
         self.assertEqual(0, self.store.dbsize())
+
+    def test_out_of_range_expire_preserves_existing_ttl(self):
+        fractional_clock = FakeClock(0.022059208)
+        fractional_store = MiniRedis(clock=fractional_clock)
+        fractional_store.set("short", "value")
+        self.assertEqual(1, fractional_store.expire("short", 1))
+        self.assertEqual(1, fractional_store.ttl("short"))
+
+        fractional_store.set("large", "value")
+        large_seconds = (1 << 63) - 1
+        self.assertEqual(1, fractional_store.expire("large", large_seconds))
+        self.assertEqual(large_seconds, fractional_store.ttl("large"))
+
+        self.store.set("key", "value")
+        self.store.expire("key", 5)
+
+        out_of_range_values = (
+            -(10**400),
+            -(1 << 63) - 1,
+            1 << 63,
+            10**400,
+        )
+        for seconds in out_of_range_values:
+            with self.subTest(seconds=seconds):
+                with self.assertRaises(ExpiryOutOfRangeError):
+                    self.store.expire("key", seconds)
+                self.assertEqual(5, self.store.ttl("key"))
+
+        self.clock.advance(5)
+        self.assertIsNone(self.store.get("key"))
 
     def test_set_overwrite_clears_ttl(self):
         self.store.set("key", "old")

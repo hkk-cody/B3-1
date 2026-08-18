@@ -17,7 +17,7 @@ class BuiltinCollectionConstraintTests(unittest.TestCase):
             with open(path, "r", encoding="utf-8") as source_file:
                 tree = ast.parse(source_file.read(), filename=path)
             for node in ast.walk(tree):
-                if isinstance(node, (ast.Dict, ast.Set)):
+                if isinstance(node, (ast.Dict, ast.Set, ast.DictComp, ast.SetComp)):
                     violations.append((path, node.lineno, type(node).__name__))
                 if (
                     isinstance(node, ast.Call)

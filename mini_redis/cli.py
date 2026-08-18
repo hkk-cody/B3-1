@@ -25,18 +25,18 @@ def run_cli(
             destination.write(PROMPT)
             destination.flush()
             line = source.readline()
+
+            if line == "":
+                break
+
+            output, should_exit = command_processor.execute(line)
+            if output is not None:
+                destination.write(output)
+                destination.write("\n")
+                destination.flush()
+            if should_exit:
+                break
         except KeyboardInterrupt:
             destination.write("\n")
             destination.flush()
-            break
-
-        if line == "":
-            break
-
-        output, should_exit = command_processor.execute(line)
-        if output is not None:
-            destination.write(output)
-            destination.write("\n")
-            destination.flush()
-        if should_exit:
             break

@@ -8,8 +8,17 @@ from mini_redis.linked_list import DoublyLinkedList, Node
 from mini_redis.min_heap import MinHeap
 
 
+NANOSECONDS_PER_SECOND = 1_000_000_000
+MIN_EXPIRE_SECONDS = -(1 << 63)
+MAX_EXPIRE_SECONDS = (1 << 63) - 1
+
+
 class OutOfMemoryError(Exception):
     """Raised when one entry cannot fit within maxmemory."""
+
+
+class ExpiryOutOfRangeError(ValueError):
+    """Raised when expiration seconds exceed the supported integer range."""
 
 
 class MemoryInfo:
@@ -28,14 +37,14 @@ class CacheEntry:
         self.key = key
         self.value = value
         self.lru_node: Optional[Node] = None
-        self.expire_at: Optional[float] = None
+        self.expire_at: Optional[int] = None
         self.ttl_version = 0
 
 
 class ExpiryRecord:
     __slots__ = ("expire_at", "ttl_version", "key")
 
-    def __init__(self, expire_at: float, ttl_version: int, key: str) -> None:
+    def __init__(self, expire_at: int, ttl_version: int, key: str) -> None:
         self.expire_at = expire_at
         self.ttl_version = ttl_version
         self.key = key
@@ -65,7 +74,10 @@ class MiniRedis:
         self._data = HashMap()
         self._lru = DoublyLinkedList()
         self._expiry_heap = MinHeap()
-        self._clock = clock if clock is not None else time.monotonic
+        if clock is None:
+            self._clock = time.monotonic_ns
+        else:
+            self._clock = lambda: int(clock() * NANOSECONDS_PER_SECOND)
         self._used_memory = 0
         self._maxmemory = 0
         self._evicted_keys = 0
@@ -144,6 +156,7 @@ class MiniRedis:
 
     def expire(self, key: str, seconds: int) -> int:
         self._validate_string(key, "key")
+        self._validate_expire_seconds(seconds)
         now = self._clock()
         self._purge_expired(now)
         entry = self._data.get(key)
@@ -153,8 +166,9 @@ class MiniRedis:
             self._delete_entry(entry)
             return 1
 
+        expire_at = now + seconds * NANOSECONDS_PER_SECOND
         entry.ttl_version += 1
-        entry.expire_at = now + seconds
+        entry.expire_at = expire_at
         self._expiry_heap.push(
             ExpiryRecord(entry.expire_at, entry.ttl_version, entry.key)
         )
@@ -169,7 +183,7 @@ class MiniRedis:
             return -2
         if entry.expire_at is None:
             return -1
-        remaining = int(entry.expire_at - now)
+        remaining = (entry.expire_at - now) // NANOSECONDS_PER_SECOND
         return remaining if remaining > 0 else 0
 
     def config_set_maxmemory(self, maxmemory: int) -> None:
@@ -186,7 +200,7 @@ class MiniRedis:
             self._evicted_keys,
         )
 
-    def _purge_expired(self, now: float) -> None:
+    def _purge_expired(self, now: int) -> None:
         record = self._expiry_heap.peek()
         while record is not None and record.expire_at <= now:
             record = self._expiry_heap.pop()
@@ -223,6 +237,13 @@ class MiniRedis:
     @staticmethod
     def _entry_size(key: str, value: str) -> int:
         return len(key.encode("utf-8")) + len(value.encode("utf-8"))
+
+    @staticmethod
+    def _validate_expire_seconds(seconds: int) -> None:
+        if not isinstance(seconds, int):
+            raise TypeError("expiration seconds must be an integer")
+        if seconds < MIN_EXPIRE_SECONDS or seconds > MAX_EXPIRE_SECONDS:
+            raise ExpiryOutOfRangeError("expiration time is out of range")
 
     @staticmethod
     def _validate_string(value: str, name: str) -> None:

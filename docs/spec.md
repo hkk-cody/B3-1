@@ -116,7 +116,7 @@ bucket index = hash mod bucket_count
 - `key: str`
 - `value: str`
 - `lru_node: Node`
-- `expire_at: float | None`
+- `expire_at: int | None` — 단조 시계 기준 나노초
 - `ttl_version: int`
 
 `ExpiryRecord`는 `expire_at`, `ttl_version`, `key`를 가지며 이 순서로 비교한다. `ttl_version`은 TTL 설정, 초기화 또는 논리적 삭제 때 증가한다.
@@ -127,7 +127,7 @@ bucket index = hash mod bucket_count
 - `DoublyLinkedList`: 앞은 MRU, 뒤는 LRU
 - `MinHeap`: 가장 이른 `ExpiryRecord`가 루트
 - `used_memory`, `maxmemory`, `evicted_keys`
-- 기본값이 `time.monotonic`인 주입 가능 시계
+- 기본값이 `time.monotonic_ns`인 단조 시계. 테스트용 초 단위 시계는 정수 나노초로 정규화
 
 ### 4.2 항상 유지할 불변식
 
@@ -159,7 +159,7 @@ bucket index = hash mod bucket_count
 | `exists(key)` | 존재하면 1, 없으면 0 |
 | `dbsize()` | 현재 키 수 |
 | `keys()` | 현재 키 iterator |
-| `expire(key, seconds)` | 설정/즉시 삭제하면 1, 없으면 0 |
+| `expire(key, seconds)` | 설정/즉시 삭제하면 1, 없으면 0, 만료 시각 범위 초과면 `ExpiryOutOfRangeError` |
 | `ttl(key)` | 없는 키 -2, TTL 없음 -1, 그 외 내림한 남은 초 |
 | `config_set_maxmemory(bytes)` | 성공 시 `None`, 음수면 `ValueError` |
 | `info_memory()` | `MemoryInfo(used_memory, maxmemory, evicted_keys)` |
@@ -184,12 +184,13 @@ bucket index = hash mod bucket_count
 
 ### 5.3 TTL 규칙
 
-- `EXPIRE`의 seconds는 정수다.
+- `EXPIRE`의 seconds는 signed 64-bit 정수 범위다.
 - 없는 키는 0이다.
 - seconds가 0 이하면 즉시 삭제하고 1이다.
-- 양수면 `expire_at = now + seconds`, 버전을 증가시키고 힙에 레코드를 추가한다.
+- 범위를 벗어나면 어떤 TTL 상태도 바꾸지 않고 `ExpiryOutOfRangeError`를 발생시킨다.
+- 양수면 `expire_at = now_ns + seconds * 1_000_000_000`을 정수 연산으로 계산하고, 버전을 증가시킨 뒤 힙에 레코드를 추가한다.
 - `TTL`은 먼저 만료를 정리한다. 없는 키는 -2, TTL이 없으면 -1이다.
-- 남은 양수 시간은 `int(expire_at - now)`로 내림하며 1초 미만이면 0이다.
+- 남은 양수 시간은 `(expire_at - now_ns) // 1_000_000_000`으로 내림하며 1초 미만이면 0이다.
 - 성공한 `SET` 덮어쓰기는 TTL을 제거하고 버전을 증가시킨다.
 - `DEL`은 엔트리를 제거하고 버전을 증가시켜 남은 힙 레코드를 무효화한다.
 
@@ -204,7 +205,7 @@ bucket index = hash mod bucket_count
 - 인자 수가 다르면 `(error) ERR wrong number of arguments for '<입력 명령>' command`다.
 - 알 수 없는 최상위 명령은 `(error) ERR unknown command '<입력 명령>'`이다.
 - 지원하지 않는 `CONFIG`/`INFO` 하위 명령은 `(error) ERR syntax error`다.
-- 정수 파싱 실패와 음수 maxmemory는 `(error) ERR value is not an integer or out of range`다.
+- 정수 파싱 실패, signed 64-bit 범위 초과, 음수 maxmemory는 `(error) ERR value is not an integer or out of range`다.
 - OOM은 `(error) OOM command not allowed when used_memory > 'maxmemory'`다.
 
 문자열은 역슬래시를 `\\`, 큰따옴표를 `\"`로 이스케이프하고 큰따옴표로 감싼다.
@@ -219,7 +220,7 @@ bucket index = hash mod bucket_count
 | `KEYS` | `1. "key"` 형식의 줄 목록, 없으면 `(empty array)` |
 | `CONFIG SET maxmemory bytes` | `OK` 또는 정수 오류 |
 | `INFO memory` | 아래 3줄 |
-| `EXPIRE key seconds` | `(integer) 1` 또는 `(integer) 0` |
+| `EXPIRE key seconds` | `(integer) 1`, `(integer) 0` 또는 정수 범위 오류 |
 | `TTL key` | `(integer) N` |
 | `exit`, `quit` | 출력 없이 종료 |
 
@@ -245,10 +246,10 @@ evicted_keys:<number>
 - 해시맵: CRUD, 강제 충돌, UTF-8 해시 안정성, 0.75 확장 경계
 - 최소 힙: 빈 상태, 정렬 순서, 중복 우선순위
 - 저장소: UTF-8 메모리, 덮어쓰기 차이 계산, SET/GET LRU, 연속 제거, OOM 원자성
-- TTL: 없음/양수/0/음수, 만료, 재설정, 덮어쓰기 초기화, stale 레코드, 전체 명령 전 정리
+- TTL: 없음/양수/0/음수, 만료, 재설정, 덮어쓰기 초기화, stale 레코드, 범위 오류 원자성, 전체 명령 전 정리
 - 명령: 정상 출력, 대소문자, 따옴표/공백, 모든 표준 오류
-- CLI: 파이프 입력에 대한 프롬프트/출력/종료
-- 제약: AST로 제품 코드의 dict/set literal, `dict()`/`set()` 호출, `collections` import를 거부
+- CLI: 파이프 입력에 대한 프롬프트/출력/종료와 명령 실행 중 `KeyboardInterrupt`
+- 제약: AST로 제품 코드의 dict/set literal·comprehension, `dict()`/`set()` 호출, `collections` import를 거부
 
 완료 시 아래 명령이 모두 성공해야 한다.
 

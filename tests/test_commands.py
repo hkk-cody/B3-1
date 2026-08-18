@@ -86,6 +86,38 @@ class CommandProcessorTests(unittest.TestCase):
         )
         self.assertEqual("(error) ERR syntax error", self.execute("INFO server"))
 
+    def test_out_of_range_expire_is_atomic(self):
+        self.assertEqual("OK", self.execute("SET key value"))
+        self.assertEqual("(integer) 1", self.execute("EXPIRE key 5"))
+
+        out_of_range_values = (
+            -(10**400),
+            -(1 << 63) - 1,
+            1 << 63,
+            10**400,
+        )
+        for seconds in out_of_range_values:
+            with self.subTest(seconds=seconds):
+                output = self.execute("EXPIRE key {}".format(seconds))
+                self.assertEqual(
+                    "(error) ERR value is not an integer or out of range", output
+                )
+                self.assertEqual("(integer) 5", self.execute("TTL key"))
+
+        self.assertEqual(
+            "(error) ERR value is not an integer or out of range",
+            self.execute("CONFIG SET maxmemory {}".format(1 << 63)),
+        )
+
+        large_seconds = (1 << 63) - 1
+        self.assertEqual(
+            "(integer) 1",
+            self.execute("EXPIRE key {}".format(large_seconds)),
+        )
+        self.assertEqual(
+            "(integer) {}".format(large_seconds), self.execute("TTL key")
+        )
+
     def test_all_commands_validate_argument_count(self):
         commands = (
             "SET key",

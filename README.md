@@ -119,6 +119,7 @@ UTF-8 바이트 기반 64-bit FNV-1a 해시를 사용합니다. 충돌은 이중
 ├── README.md
 ├── main.py
 ├── docs/
+│   ├── code-analysis-guide.md
 │   ├── subject.md
 │   └── spec.md
 ├── mini_redis/
@@ -168,3 +169,4 @@ git diff --check
 
 - [과제 원문](docs/subject.md)
 - [기술 명세](docs/spec.md)
+- [코드 분석 가이드](docs/code-analysis-guide.md)
