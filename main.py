@@ -1,4 +1,4 @@
-"""Run the Mini Redis command-line interface."""
+"""Mini Redis 명령줄 인터페이스(CLI)를 실행합니다."""
 
 from mini_redis.cli import run_cli
 

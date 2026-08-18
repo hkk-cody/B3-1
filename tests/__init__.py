@@ -1,1 +1,1 @@
-"""Mini Redis test suite."""
+"""Mini Redis 테스트 스위트."""

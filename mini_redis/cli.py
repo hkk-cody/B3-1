@@ -1,4 +1,4 @@
-"""Interactive command-line interface for Mini Redis."""
+"""Mini Redis 대화형 명령줄 인터페이스(CLI)."""
 
 import sys
 from typing import Optional, TextIO
@@ -14,7 +14,7 @@ def run_cli(
     input_stream: Optional[TextIO] = None,
     output_stream: Optional[TextIO] = None,
 ) -> None:
-    """Run the REPL until EOF, interruption, exit, or quit."""
+    """EOF, 인터럽트(키보드 중단), exit 또는 quit 입력 시까지 REPL을 실행합니다."""
 
     command_processor = processor if processor is not None else CommandProcessor()
     source = input_stream if input_stream is not None else sys.stdin

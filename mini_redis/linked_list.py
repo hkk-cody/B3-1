@@ -1,10 +1,10 @@
-"""Sentinel-based doubly linked list used by the hash map and LRU."""
+"""해시맵 및 LRU에서 사용되는 센티널 기반 이중 연결 리스트."""
 
 from typing import Any, Iterator, Optional
 
 
 class Node:
-    """A node whose position can be changed in constant time."""
+    """O(1) 상수 시간 내에 위치를 변경할 수 있는 노드."""
 
     __slots__ = ("prev", "next", "data", "_owner")
 
@@ -16,7 +16,7 @@ class Node:
 
 
 class DoublyLinkedList:
-    """A doubly linked list with hidden head and tail sentinels."""
+    """숨겨진 head 및 tail 센티널 노드를 가진 이중 연결 리스트."""
 
     __slots__ = ("_head", "_tail", "_size")
 
@@ -49,13 +49,13 @@ class DoublyLinkedList:
 
     def insert_front(self, data: Any) -> Node:
         first = self._head.next
-        if first is None:  # The sentinel invariant makes this unreachable.
+        if first is None:  # 센티널 불변 조건으로 인해 도달할 수 없습니다.
             raise RuntimeError("corrupt linked list")
         return self._insert_between(data, self._head, first)
 
     def insert_back(self, data: Any) -> Node:
         last = self._tail.prev
-        if last is None:  # The sentinel invariant makes this unreachable.
+        if last is None:  # 센티널 불변 조건으로 인해 도달할 수 없습니다.
             raise RuntimeError("corrupt linked list")
         return self._insert_between(data, last, self._tail)
 
@@ -72,7 +72,7 @@ class DoublyLinkedList:
         return self.remove_node(node)
 
     def remove_node(self, node: Node) -> Any:
-        """Remove a known node without searching for it."""
+        """탐색 없이 주어진 노드를 즉시 제거합니다."""
 
         self._validate_node(node)
         previous = node.prev
@@ -88,7 +88,7 @@ class DoublyLinkedList:
         return node.data
 
     def move_to_front(self, node: Node) -> Node:
-        """Move a known node to the front without changing the size."""
+        """크기(size)를 변경하지 않고 주어진 노드를 맨 앞으로 이동합니다."""
 
         self._validate_node(node)
         if node.prev is self._head:

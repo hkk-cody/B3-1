@@ -1,4 +1,4 @@
-"""Educational Mini Redis package."""
+"""교육용 Mini Redis 패키지."""
 
 from mini_redis.commands import CommandProcessor
 from mini_redis.hash_map import HashMap

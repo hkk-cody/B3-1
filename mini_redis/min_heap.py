@@ -1,10 +1,10 @@
-"""Array-backed minimum heap with explicit heapify operations."""
+"""명시적 힙화(heapify) 연산을 사용하는 배열 기반 최소 힙."""
 
 from typing import Any
 
 
 class MinHeap:
-    """A minimum heap for values that implement the less-than operator."""
+    """비교 연산자(<)가 구현된 값들을 위한 최소 힙."""
 
     __slots__ = ("_items",)
 

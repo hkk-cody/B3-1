@@ -1,4 +1,4 @@
-"""Mini Redis storage engine with LRU eviction and heap-based TTL expiry."""
+"""LRU 제거 및 힙 기반 TTL 만료 처리를 지원하는 Mini Redis 스토리지 엔진."""
 
 import time
 from typing import Callable, Iterator, Optional
@@ -14,11 +14,11 @@ MAX_EXPIRE_SECONDS = (1 << 63) - 1
 
 
 class OutOfMemoryError(Exception):
-    """Raised when one entry cannot fit within maxmemory."""
+    """단일 항목의 크기가 maxmemory 제한을 초과하여 저장할 수 없을 때 발생합니다."""
 
 
 class ExpiryOutOfRangeError(ValueError):
-    """Raised when expiration seconds exceed the supported integer range."""
+    """만료 시간(초)이 지원되는 정수 범위를 벗어날 때 발생합니다."""
 
 
 class MemoryInfo:
@@ -58,7 +58,7 @@ class ExpiryRecord:
 
 
 class MiniRedis:
-    """In-memory string store composed only from the custom structures."""
+    """직접 구현한 커스텀 자료구조로만 구성된 인메모리 문자열 저장소."""
 
     __slots__ = (
         "_data",

@@ -1,4 +1,4 @@
-"""String-keyed hash map with FNV-1a hashing and linked-list chaining."""
+"""FNV-1a 해싱과 연결 리스트 체이닝을 사용하는 문자열 키 해시맵."""
 
 from typing import Any, Iterator, Optional
 
@@ -14,7 +14,7 @@ class HashEntry:
 
 
 class HashMap:
-    """A hash map implementation that does not delegate storage to dict."""
+    """내부 저장을 dict에 위임하지 않고 직접 구현한 해시맵."""
 
     DEFAULT_CAPACITY = 8
     MAX_LOAD_FACTOR = 0.75

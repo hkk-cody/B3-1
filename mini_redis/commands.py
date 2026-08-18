@@ -1,4 +1,4 @@
-"""Redis-style command parsing and response formatting."""
+"""Redis 스타일의 명령어 파싱 및 응답 포맷팅."""
 
 import shlex
 from typing import Optional, Tuple
@@ -14,14 +14,14 @@ MAX_INTEGER = (1 << 63) - 1
 
 
 def quote_string(value: str) -> str:
-    """Return a Redis-like quoted representation of a string."""
+    """문자열을 Redis 스타일의 따옴표로 감싼 형태로 반환합니다."""
 
     escaped = value.replace("\\", "\\\\").replace('"', '\\"')
     return '"{}"'.format(escaped)
 
 
 class CommandProcessor:
-    """Parse one input line and execute it against a MiniRedis store."""
+    """입력된 한 줄을 파싱하여 MiniRedis 저장소에서 실행합니다."""
 
     __slots__ = ("_store",)
 
