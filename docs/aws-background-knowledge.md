@@ -1340,50 +1340,52 @@ IGW의 퍼블릭·사설 주소 변환과 **별도 리소스인 NAT Gateway**를
 
 ### 19-1. 용어
 
-| 용어 | 짧은 뜻 |
-| --- | --- |
-| Account | AWS 계정 경계 |
-| Region | 서울 등 리소스를 생성하는 지리적 리전 |
-| AZ | 리전 안의 가용 영역 |
-| VPC | AWS의 가상 네트워크 |
-| Subnet | VPC의 주소 범위를 나눈 구역, AZ 하나에 속함 |
-| CIDR | IP 주소 범위를 나타내는 접두사 표기 |
-| Private IP | 내부 네트워크에서 사용하는 사설 주소 |
-| Public IP | 공용 인터넷 통신에 사용하는 주소 |
-| Elastic IP | 계정에 할당해 유지하는 고정 퍼블릭 IPv4 |
-| ENI | EC2 등에 연결하는 가상 네트워크 인터페이스 |
-| IGW | VPC와 인터넷 연결에 사용하는 게이트웨이 |
-| Route Table | 목적지별 전달 경로를 정하는 표 |
-| Route | 목적지 범위와 전달 대상의 한 쌍 |
-| Association | Subnet과 Route Table 등 리소스 사이의 연결 |
-| DNS | 도메인 이름과 주소 등을 조회하는 체계 |
-| NAT | 통신 과정에서 IP 주소·경우에 따라 포트를 변환하는 방식 |
-| Inbound | 해당 자원으로 들어오는 방향 |
-| Outbound | 해당 자원에서 나가는 방향 |
-| SG | 리소스의 네트워크 허용 규칙 |
-| NACL | Subnet에 적용하는 네트워크 허용·거부 규칙 |
-| Stateful | 통신 상태를 추적해 후속 패킷을 판단 |
-| Stateless | 연결 상태에 의존하지 않고 규칙으로 각 방향을 판단 |
-| IAM | AWS 작업 주체와 권한 관리 |
-| ARN | AWS 리소스를 식별하는 이름 형식 |
-| Policy | 작업·대상·조건을 정의한 권한 문서 |
-| Role | 수임해 임시 자격 증명으로 사용하는 권한 주체 |
-| AMI | EC2를 시작할 때 사용하는 OS·소프트웨어 이미지 |
-| EBS | EC2에서 사용하는 블록 저장 공간 |
-| SSH | 암호화된 원격 접속·명령 실행 방식 |
-| Key pair | 서로 대응하는 공개 키·개인 키 |
-| Fingerprint | 키 등의 내용을 짧게 비교할 수 있는 지문 |
-| Shell | 명령을 해석하고 실행하는 프로그램 |
-| Process | 실행 중인 프로그램 |
-| Service | OS가 지속 실행을 관리하는 프로그램 단위 |
-| Listen | 프로그램이 특정 주소·포트에서 요청을 기다리는 상태 |
-| HTTP | 웹 요청·응답의 의미와 형식을 정한 프로토콜 |
-| TLS | 통신을 암호화하고 신원·무결성을 확인하는 프로토콜 |
-| Endpoint | 요청을 보내는 접점. 예: `/health` |
-| Status code | HTTP 응답 결과를 나타내는 숫자 |
-| Health check | 정의한 정상 조건에 대한 상태 확인 |
-| Snapshot | 특정 시점의 저장 상태를 보관하는 방식 |
-| Dependency | 한 자원이 다른 자원의 존재·연결에 의존하는 관계 |
+| 용어 | 풀네임 (Full Name) | 짧은 뜻 |
+| --- | --- | --- |
+| Account | AWS Account | AWS 계정 경계 |
+| Region | AWS Region | 서울 등 리소스를 생성하는 지리적 리전 |
+| AZ | Availability Zone | 리전 안의 독립된 가용 영역 (데이터센터 클러스터) |
+| VPC | Virtual Private Cloud | AWS 클라우드 내 격리된 가상 사설 네트워크 |
+| Subnet | Subnetwork | VPC의 주소 범위를 나눈 세부 구역, AZ 하나에 속함 |
+| CIDR | Classless Inter-Domain Routing | IP 주소 범위를 나타내는 접두사 표기법 (예: `/24`) |
+| IP | Internet Protocol | 네트워크에서 기기를 식별하고 통신하는 주소 규약 |
+| Private IP | Private Internet Protocol Address | 내부 네트워크에서만 사용하는 사설 IP 주소 |
+| Public IP | Public Internet Protocol Address | 공용 인터넷 통신에 사용하는 공인 IP 주소 |
+| Elastic IP (EIP) | Elastic IP Address | 계정에 할당해 유지 및 재연결 가능한 고정 퍼블릭 IPv4 |
+| ENI | Elastic Network Interface | EC2 등에 연결하는 가상 네트워크 인터페이스 (가상 랜카드) |
+| IGW | Internet Gateway | VPC와 인터넷 사이의 양방향 통신을 가능하게 하는 게이트웨이 |
+| Route Table | Route Table | 목적지 IP별 전달 경로(Route)를 정의한 라우팅 표 |
+| Route | Route | 목적지 CIDR 범위와 전달 대상(타깃)의 한 쌍 |
+| Association | Subnet-Route Table Association | Subnet과 Route Table 등 리소스 사이의 연결 매핑 |
+| DNS | Domain Name System | 도메인 이름(예: `naver.com`)과 IP 주소를 상호 변환·조회하는 체계 |
+| NAT | Network Address Translation | 사설 IP와 공인 IP 간의 주소(및 포트)를 변환하는 방식 |
+| Inbound | Inbound Traffic | 리소스로 들어오는 방향의 네트워크 트래픽 |
+| Outbound | Outbound Traffic | 리소스에서 바깥으로 나가는 방향의 네트워크 트래픽 |
+| SG | Security Group | EC2 인스턴스/ENI 단위로 적용하는 가상 방화벽 (허용 규칙, Stateful) |
+| NACL | Network Access Control List | Subnet 단위에 적용하는 네트워크 허용·거부 규칙 (Stateless) |
+| Stateful | Stateful Inspection | 들어온 연결 상태를 기억해 돌아가는 응답 트래픽을 자동 허용하는 방식 |
+| Stateless | Stateless Filtering | 이전 상태를 기억하지 않고 인바운드/아웃바운드 규칙을 각각 독립적으로 검사 |
+| IAM | Identity and Access Management | AWS 작업 주체(사용자/역할)와 권한을 관리하는 서비스 |
+| ARN | Amazon Resource Name | 모든 AWS 리소스를 고유하게 식별하는 표준 이름 형식 |
+| Policy | IAM Policy | 어떤 작업(Action), 대상(Resource), 조건(Condition)을 허용할지 정의한 권한 문서 |
+| Role | IAM Role | 특정 주체나 서비스가 임시로 권한을 부여받아(수임) 사용하는 자격 증명 |
+| EC2 | Elastic Compute Cloud | 필요에 따라 크기를 조정할 수 있는 독립된 가상 서버 인스턴스 |
+| AMI | Amazon Machine Image | EC2 생성 시 OS와 초기 소프트웨어 상태를 담은 템플릿 이미지 |
+| EBS | Elastic Block Store | EC2 인스턴스에 붙여 OS 및 데이터를 저장하는 지속형 가상 드라이브 |
+| SSH | Secure Shell | 암호화된 터널을 통해 원격 서버에 안전하게 접속하고 명령을 실행하는 프로토콜 |
+| Key pair | Key Pair | SSH 인증에 사용하는 서로 대응되는 공개 키(Public Key)와 개인 키(Private Key) 쌍 |
+| Fingerprint | Key Fingerprint | 공개 키나 인증서의 고유 식별을 위해 해시한 짧은 지문 값 |
+| Shell | Command-Line Shell | 사용자의 명령을 해석하여 OS 커널에 전달·실행하는 프로그램 (예: bash) |
+| Process | Process | 메모리에 적재되어 실행 중인 프로그램의 단위 |
+| Service | System Service / Daemon | OS(systemd)가 백그라운드에서 지속적인 실행과 재시작을 관리하는 프로그램 |
+| Listen | Port Listening | 프로그램(서버)이 특정 IP와 포트에서 클라이언트 요청을 기다리는 상태 |
+| HTTP | HyperText Transfer Protocol | 웹 브라우저와 서버 간 웹 문서 및 데이터를 주고받는 표준 통신 규약 |
+| TLS | Transport Layer Security | 인터넷 통신을 암호화하고 무결성·신원을 보장하는 보안 프로토콜 (HTTPS의 기반) |
+| Endpoint | API / HTTP Endpoint | 요청을 받아 처리하는 서비스 접근 접점 (예: `/health`) |
+| Status code | HTTP Status Code | HTTP 요청 결과를 나타내는 3자리 숫자 (예: `200 OK`, `404 Not Found`) |
+| Health check | Health Check | 서버나 서비스가 정상 동작 중인지 주기적으로 확인하는 상태 점검 |
+| Snapshot | EBS Snapshot | 특정 시점의 EBS 볼륨 상태를 S3에 증분 백업해 둔 저장본 |
+| Dependency | Resource Dependency | 한 자원이 생성·삭제될 때 다른 자원의 존재나 연결 상태에 의존하는 관계 |
 
 ### 19-2. 주로 읽기만 하는 명령
 
